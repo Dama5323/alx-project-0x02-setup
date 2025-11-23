@@ -76,7 +76,7 @@ export interface User {
 // Interface for Button component props
 export interface ButtonProps {
   children: React.ReactNode;
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   type?: 'button' | 'submit' | 'reset';
   size?: 'small' | 'medium' | 'large';
   shape?: 'rounded-sm' | 'rounded-md' | 'rounded-full';
@@ -84,6 +84,7 @@ export interface ButtonProps {
   disabled?: boolean;
   className?: string;
 }
+
 
 // Interface for API response - Keep 'body' for API responses
 export interface ApiPost {
