@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/layout/Header';
-import PostCard from '../components/common/PostCard';
+import Header from '@/components/layout/Header';
+import PostCard from '@/components/common/PostCard';
 import { ApiPost, ApiUser, Post } from '../interfaces';
 
 export default function PostsPage() {
