@@ -1,63 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import Header from '../components/layout/Header';
-import UserCard from '../components/common/UserCard';
+import React from 'react';
+import Header from '@/components/layout/Header';
+import UserCard from '@/components/common/UserCard';
 import { ApiUser, User } from '../interfaces';
 
-export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch users from JSONPlaceholder API
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetch('https://jsonplaceholder.typicode.com/users');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch users data from API');
-      }
-
-      const usersData: ApiUser[] = await response.json();
-
-      // Convert API users to our User format
-      const formattedUsers: User[] = usersData.map(user => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        website: user.website,
-        address: {
-          street: user.address.street,
-          suite: user.address.suite,
-          city: user.address.city,
-          zipcode: user.address.zipcode
-        },
-        company: {
-          name: user.company.name,
-          catchPhrase: user.company.catchPhrase,
-          bs: user.company.bs
-        }
-      }));
-
-      setUsers(formattedUsers);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred while fetching users');
-    } finally {
-      setLoading(false);
+// This function runs at build time on the server
+export async function getStaticProps() {
+  try {
+    const response = await fetch('https://jsonplaceholder.typicode.com/users');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch users data from API');
     }
-  };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+    const usersData: ApiUser[] = await response.json();
 
-  // Handle retry
-  const handleRetry = () => {
-    fetchUsers();
-  };
+    // Convert API users to our User format
+    const formattedUsers: User[] = usersData.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      website: user.website,
+      address: {
+        street: user.address.street,
+        suite: user.address.suite,
+        city: user.address.city,
+        zipcode: user.address.zipcode
+      },
+      company: {
+        name: user.company.name,
+        catchPhrase: user.company.catchPhrase,
+        bs: user.company.bs
+      }
+    }));
+
+    return {
+      props: {
+        users: formattedUsers
+      },
+      // Re-generate the page at most once every 10 seconds
+      revalidate: 10
+    };
+  } catch (error) {
+    return {
+      props: {
+        users: [],
+        error: 'Failed to fetch users from API'
+      }
+    };
+  }
+}
+
+// The component now receives data as props from getStaticProps
+interface UsersPageProps {
+  users: User[];
+  error?: string;
+}
+
+export default function UsersPage({ users, error }: UsersPageProps) {
+  // No more useState or useEffect for data fetching!
+  // The data is already available as props from getStaticProps
 
   return (
     <>
@@ -70,14 +72,14 @@ export default function UsersPage() {
               Our Users
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Meet our amazing users! All data is fetched in real-time from JSONPlaceholder API.
+              Meet our amazing users! All data is pre-fetched at build time using getStaticProps.
             </p>
             
             {/* API Status */}
             <div className="mt-4 flex justify-center items-center space-x-4">
-              <div className={`w-3 h-3 rounded-full ${loading ? 'bg-yellow-500 animate-pulse' : error ? 'bg-red-500' : 'bg-green-500'}`}></div>
+              <div className={`w-3 h-3 rounded-full ${error ? 'bg-red-500' : 'bg-green-500'}`}></div>
               <span className="text-sm text-gray-600">
-                {loading ? 'Loading users...' : error ? 'Error loading users' : `${users.length} users loaded`}
+                {error ? 'Error loading users' : `${users.length} users loaded`}
               </span>
             </div>
           </div>
@@ -90,38 +92,15 @@ export default function UsersPage() {
                   Failed to Load Users
                 </h3>
                 <p className="text-red-600 mb-4">{error}</p>
-                <button
-                  onClick={handleRetry}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                >
-                  Try Again
-                </button>
+                <p className="text-sm text-gray-500">
+                  This error occurred during build time. Please try rebuilding the application.
+                </p>
               </div>
             </div>
           )}
 
-          {/* Loading State */}
-          {loading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-              {[...Array(6)].map((_, index) => (
-                <div key={index} className="bg-white rounded-xl shadow-lg p-6 animate-pulse">
-                  <div className="h-6 bg-gradient-to-r from-gray-300 to-gray-200 rounded mb-4"></div>
-                  <div className="space-y-3">
-                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                    <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-                    <div className="h-4 bg-gray-300 rounded w-5/6"></div>
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="h-3 bg-gray-300 rounded w-2/3 mb-2"></div>
-                    <div className="h-3 bg-gray-300 rounded w-4/5"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Users Grid */}
-          {!loading && !error && (
+          {!error && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
                 {users.map((user) => (
@@ -158,13 +137,15 @@ export default function UsersPage() {
           <div className="mt-12 max-w-4xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                🌐 Real API Data
+                🌐 Static Generation with getStaticProps
               </h3>
               <p className="text-gray-600 mb-2">
-                This page displays real user data fetched from <strong>JSONPlaceholder API</strong>. 
-                Each user card shows complete information including contact details, address, and company information.
+                This page uses <strong>getStaticProps</strong> to fetch user data at build time. 
+                All user information is pre-rendered on the server for optimal performance.
               </p>
               <div className="text-sm text-gray-500">
+                <strong>Data fetching method:</strong> Static Generation (SSG)
+                <br />
                 <strong>API Endpoint:</strong>{' '}
                 <code className="bg-gray-100 px-2 py-1 rounded">https://jsonplaceholder.typicode.com/users</code>
               </div>
